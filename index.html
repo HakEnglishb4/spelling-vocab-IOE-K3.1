@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Word Scramble Vocabulary Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              'sans': ['Nunito', 'sans-serif'],
+            },
+            keyframes: {
+              shake: {
+                '0%, 100%': { transform: 'translateX(0)' },
+                '10%, 30%, 50%, 70%, 90%': { transform: 'translateX(-10px)' },
+                '20%, 40%, 60%, 80%': { transform: 'translateX(10px)' },
+              },
+              pop: {
+                '0%': { transform: 'scale(0.9)', opacity: '0' },
+                '50%': { transform: 'scale(1.1)', opacity: '1' },
+                '100%': { transform: 'scale(1)', opacity: '1' },
+              },
+            },
+            animation: {
+              shake: 'shake 0.6s cubic-bezier(.36,.07,.19,.97) both',
+              pop: 'pop 0.3s ease-out',
+            },
+          }
+        }
+      }
+    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/client": "https://aistudiocdn.com/react-dom@^19.2.0/client",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/"
+  }
+}
+</script>
+</head>
+  <body class="bg-sky-100 text-slate-800">
+    <div id="root"></div>
+    <script type="module">
+      import React, { useState, useEffect, useCallback, useMemo } from 'react';
+      import ReactDOM from 'react-dom/client';
+
+      // --- Static Word List with Translations ---
+      const STATIC_WORD_LIST = [
+        // CHỦ ĐỀ 1-2: SCHOOL
+        { english: "school 🏫", vietnamese: "trường học" },
+        { english: "classroom 🧑‍🏫", vietnamese: "phòng học" },
+        { english: "library 📚", vietnamese: "thư viện" },
+        { english: "playground 🎠", vietnamese: "sân chơi" },
+        { english: "gym 🏋️", vietnamese: "phòng thể dục" },
+        { english: "canteen 🍽️", vietnamese: "căn tin" },
+        { english: "art room 🎨", vietnamese: "phòng mỹ thuật" },
+        { english: "computer room 💻", vietnamese: "phòng máy tính" },
+        { english: "music room 🎵", vietnamese: "phòng âm nhạc" },
+        { english: "teacher's room 👩‍🏫", vietnamese: "phòng giáo viên" },
+        { english: "toilet 🚽", vietnamese: "nhà vệ sinh" },
+        { english: "school gate ⛩️", vietnamese: "cổng trường" },
+        { english: "school yard 🏫", vietnamese: "sân trường" },
+        { english: "corridor 🚶‍♂️", vietnamese: "hành lang" },
+        { english: "head teacher's office 👨‍🏫", vietnamese: "văn phòng hiệu trưởng" },
+        { english: "pen 🖊️", vietnamese: "bút mực" },
+        { english: "pencil ✏️", vietnamese: "bút chì" },
+        { english: "eraser 🧼", vietnamese: "cục tẩy" },
+        { english: "ruler 📏", vietnamese: "thước kẻ" },
+        { english: "notebook 📓", vietnamese: "vở" },
+        { english: "book 📖", vietnamese: "sách" },
+        { english: "school bag 🎒", vietnamese: "cặp sách" },
+        { english: "pencil case 👝", vietnamese: "hộp bút" },
+        { english: "crayon 🖍️", vietnamese: "bút sáp màu" },
+        { english: "paper 📄", vietnamese: "tờ giấy" },
+        { english: "sharpener 🔪", vietnamese: "gọt bút chì" },
+        { english: "glue 🧴", vietnamese: "keo dán" },
+        { english: "scissors ✂️", vietnamese: "cái kéo" },
+        { english: "clock ⏰", vietnamese: "đồng hồ" },
+        { english: "map 🗺️", vietnamese: "bản đồ" },
+        { english: "board 📋", vietnamese: "bảng" },
+        { english: "chalk ✍️", vietnamese: "phấn" },
+        { english: "duster 🧽", vietnamese: "giẻ lau bảng" },
+        { english: "school uniform 👕", vietnamese: "đồng phục học sinh" },
+        { english: "desk 🖋️", vietnamese: "bàn học" },
+        { english: "chair 🪑", vietnamese: "ghế" },
+        { english: "bookcase 📚", vietnamese: "tủ sách" },
+        { english: "timetable 🗓️", vietnamese: "thời khóa biểu" },
+        { english: "backpack 🎒", vietnamese: "balô" },
+
+        // CHỦ ĐỀ 3: PEOPLE AT SCHOOL
+        { english: "teacher 👩‍🏫", vietnamese: "giáo viên" },
+        { english: "student 🧑‍🎓", vietnamese: "học sinh" },
+        { english: "classmate 🧑‍🤝‍🧑", vietnamese: "bạn cùng lớp" },
+        { english: "head teacher 👨‍🏫", vietnamese: "hiệu trưởng" },
+        { english: "monitor 📋", vietnamese: "lớp trưởng" },
+        { english: "friend 😊", vietnamese: "bạn" },
+        { english: "librarian 👩‍💼", vietnamese: "thủ thư" },
+        { english: "janitor 🧹", vietnamese: "lao công" },
+        { english: "nurse 👩‍⚕️", vietnamese: "y tá" },
+        { english: "guard 👮", vietnamese: "bảo vệ" },
+        { english: "principal 👨‍🏫", vietnamese: "hiệu trưởng" },
+        { english: "PE teacher 🤸", vietnamese: "giáo viên thể dục" },
+        { english: "music teacher 🎶", vietnamese: "giáo viên âm nhạc" },
+        { english: "art teacher 🎨", vietnamese: "giáo viên mỹ thuật" },
+        { english: "English teacher 🏴󠁧󠁢󠁥󠁮󠁧󠁿", vietnamese: "giáo viên tiếng Anh" },
+        { english: "science teacher 🔬", vietnamese: "giáo viên khoa học" },
+        { english: "math teacher 🧮", vietnamese: "giáo viên toán" },
+        { english: "classmates 🧑‍🤝‍🧑", vietnamese: "bạn học" },
+        { english: "school staff 👥", vietnamese: "nhân viên trường học" },
+
+        // CHỦ ĐỀ 4: CLASSROOM INSTRUCTIONS
+        { english: "stand up 🧍", vietnamese: "đứng lên" },
+        { english: "sit down 🪑", vietnamese: "ngồi xuống" },
+        { english: "open your book 📖", vietnamese: "mở sách" },
+        { english: "close your book 📕", vietnamese: "đóng sách" },
+        { english: "listen 🎧", vietnamese: "nghe" },
+        { english: "look 👀", vietnamese: "nhìn" },
+        { english: "read 📖", vietnamese: "đọc" },
+        { english: "write ✍️", vietnamese: "viết" },
+        { english: "spell 🔤", vietnamese: "đánh vần" },
+        { english: "repeat 🗣️", vietnamese: "nhắc lại" },
+        { english: "point 👉", vietnamese: "chỉ vào" },
+        { english: "raise your hand ✋", vietnamese: "giơ tay" },
+        { english: "be quiet 🤫", vietnamese: "im lặng" },
+        { english: "come in 🚪", vietnamese: "vào" },
+        { english: "go out 🚶‍♀️", vietnamese: "ra ngoài" },
+        { english: "clean the board 칠판", vietnamese: "lau bảng" },
+        { english: "show me 👀", vietnamese: "cho xem" },
+        { english: "give me 🤲", vietnamese: "đưa cho" },
+        { english: "draw 🎨", vietnamese: "vẽ" },
+        { english: "circle ⭕", vietnamese: "khoanh tròn" },
+        { english: "underline 📝", vietnamese: "gạch dưới" },
+        { english: "match 🧩", vietnamese: "nối" },
+        { english: "color 🎨", vietnamese: "tô màu" },
+        { english: "clap 👏", vietnamese: "vỗ tay" },
+        { english: "sing 🎤", vietnamese: "hát" },
+        { english: "dance 💃", vietnamese: "nhảy" },
+        { english: "count 🔢", vietnamese: "đếm" },
+        { english: "say 🗣️", vietnamese: "nói" },
+        { english: "close the door 🚪", vietnamese: "đóng cửa" },
+        { english: "open the window 🪟", vietnamese: "mở cửa sổ" },
+        { english: "tidy up 🧹", vietnamese: "dọn dẹp" },
+        { english: "don't talk 🤫", vietnamese: "đừng nói chuyện" },
+        
+        // CHỦ ĐỀ 5-6: GREETINGS & FAREWELLS
+        { english: "hello 👋", vietnamese: "xin chào" },
+        { english: "hi 👋", vietnamese: "chào" },
+        { english: "good morning ☀️", vietnamese: "chào buổi sáng" },
+        { english: "good afternoon 🌇", vietnamese: "chào buổi chiều" },
+        { english: "good evening 🌃", vietnamese: "chào buổi tối" },
+        { english: "nice to meet you 😊", vietnamese: "rất vui được gặp bạn" },
+        { english: "how are you 🤔", vietnamese: "bạn khỏe không" },
+        { english: "I'm fine thank you 👍", vietnamese: "tôi khỏe, cảm ơn" },
+        { english: "what's your name ❓", vietnamese: "tên bạn là gì" },
+        { english: "my name is 🏷️", vietnamese: "tôi tên là" },
+        { english: "how old are you ❓", vietnamese: "bạn mấy tuổi" },
+        { english: "where are you from ❓", vietnamese: "bạn đến từ đâu" },
+        { english: "who's that ❓", vietnamese: "ai vậy" },
+        { english: "that's my friend 🧑‍🤝‍🧑", vietnamese: "đó là bạn tôi" },
+        { english: "meet my friend 👋", vietnamese: "làm quen với bạn tôi" },
+        { english: "this is 👉", vietnamese: "đây là" },
+        { english: "welcome 🤗", vietnamese: "chào mừng" },
+        { english: "goodbye 👋", vietnamese: "tạm biệt" },
+        { english: "bye 👋", vietnamese: "chào tạm biệt" },
+        { english: "see you 👋", vietnamese: "gặp lại bạn" },
+        { english: "see you soon 👋", vietnamese: "hẹn sớm gặp lại" },
+        { english: "see you tomorrow 👋", vietnamese: "gặp lại ngày mai" },
+        { english: "good night 🌙", vietnamese: "chúc ngủ ngon" },
+        { english: "have a nice day 😊", vietnamese: "chúc một ngày vui" },
+        { english: "take care ❤️", vietnamese: "giữ gìn sức khỏe" },
+        { english: "I have to go 🚶", vietnamese: "tôi phải đi rồi" },
+        { english: "I'll miss you 🤗", vietnamese: "tôi sẽ nhớ bạn" },
+        { english: "it's time to go ⏰", vietnamese: "đến lúc phải đi" },
+        { english: "see you again 👋", vietnamese: "mong gặp lại bạn" },
+        { english: "have fun 🎉", vietnamese: "chúc vui vẻ" },
+        { english: "bye-bye 👋", vietnamese: "tạm biệt" },
+        { english: "until next time ⏳", vietnamese: "hẹn lần sau" },
+        { english: "catch you later 👋", vietnamese: "gặp lại sau" },
+        { english: "have a good evening 🌆", vietnamese: "chúc buổi tối vui vẻ" },
+        { english: "I'm leaving 🚶‍♀️", vietnamese: "tôi đi đây" },
+        { english: "safe trip ✈️", vietnamese: "đi đường bình an" },
+        { english: "bye for now 👋", vietnamese: "tạm biệt bây giờ" },
+        
+        // CHỦ ĐỀ 7-8: PERMISSION & FEELINGS
+        { english: "may 🙏", vietnamese: "có thể (xin phép)" },
+        { english: "can 👍", vietnamese: "có thể" },
+        { english: "please 🙏", vietnamese: "làm ơn" },
+        { english: "go to the toilet 🚽", vietnamese: "đi vệ sinh" },
+        { english: "borrow 🤝", vietnamese: "mượn" },
+        { english: "lend 🤝", vietnamese: "cho mượn" },
+        { english: "use 🛠️", vietnamese: "dùng" },
+        { english: "answer 🗣️", vietnamese: "trả lời" },
+        { english: "help 🙏", vietnamese: "giúp đỡ" },
+        { english: "go home 🏠", vietnamese: "về nhà" },
+        { english: "eat 🍽️", vietnamese: "ăn" },
+        { english: "drink 🥤", vietnamese: "uống" },
+        { english: "play 🎲", vietnamese: "chơi" },
+        { english: "yes you can 👍", vietnamese: "đồng ý" },
+        { english: "no you can't 👎", vietnamese: "không được phép" },
+        { english: "happy 😊", vietnamese: "vui vẻ" },
+        { english: "sad 😢", vietnamese: "buồn" },
+        { english: "angry 😠", vietnamese: "tức giận" },
+        { english: "tired 😫", vietnamese: "mệt mỏi" },
+        { english: "hungry 😋", vietnamese: "đói" },
+        { english: "thirsty 💧", vietnamese: "khát" },
+        { english: "scared 😨", vietnamese: "sợ hãi" },
+        { english: "excited 🎉", vietnamese: "háo hức" },
+        { english: "worried 😟", vietnamese: "lo lắng" },
+        { english: "bored 😒", vietnamese: "chán" },
+        { english: "surprised 😮", vietnamese: "ngạc nhiên" },
+        { english: "fine 👌", vietnamese: "khỏe" },
+        { english: "great 👍", vietnamese: "tuyệt vời" },
+        { english: "okay 👌", vietnamese: "ổn" },
+        { english: "not bad 🙂", vietnamese: "không tệ" },
+        { english: "so-so 😐", vietnamese: "bình thường" },
+        { english: "hot 🔥", vietnamese: "nóng" },
+        { english: "cold 🥶", vietnamese: "lạnh" },
+        { english: "sick 🤢", vietnamese: "ốm" },
+        { english: "sleepy 😴", vietnamese: "buồn ngủ" },
+        { english: "wonderful ✨", vietnamese: "tuyệt vời" },
+        { english: "nervous 😬", vietnamese: "lo lắng, hồi hộp" },
+
+        // CHỦ ĐỀ 9: FAMILY MEMBERS
+        { english: "family 👨‍👩‍👧‍👦", vietnamese: "gia đình" },
+        { english: "father 👨", vietnamese: "bố, cha" },
+        { english: "mother 👩", vietnamese: "mẹ" },
+        { english: "dad 👨‍👧", vietnamese: "bố" },
+        { english: "mom 👩‍👧", vietnamese: "mẹ" },
+        { english: "parents 👨‍👩‍👧", vietnamese: "cha mẹ" },
+        { english: "sister 👧", vietnamese: "chị/em gái" },
+        { english: "brother 👦", vietnamese: "anh/em trai" },
+        { english: "baby 👶", vietnamese: "em bé" },
+        { english: "grandfather 👴", vietnamese: "ông" },
+        { english: "grandmother 👵", vietnamese: "bà" },
+        { english: "grandpa 👴", vietnamese: "ông" },
+        { english: "grandma 👵", vietnamese: "bà" },
+        { english: "uncle 👨‍🦰", vietnamese: "chú, bác (trai)" },
+        { english: "aunt 👩‍🦰", vietnamese: "cô, dì (gái)" },
+        { english: "cousin 🧑‍🤝‍🧑", vietnamese: "anh/chị/em họ" },
+        { english: "son 👦", vietnamese: "con trai" },
+        { english: "daughter 👧", vietnamese: "con gái" },
+        { english: "husband 👨‍💼", vietnamese: "chồng" },
+        { english: "wife 👩‍💼", vietnamese: "vợ" },
+        { english: "twins 👯", vietnamese: "sinh đôi" },
+        { english: "love ❤️", vietnamese: "yêu thương" },
+        { english: "live 🏠", vietnamese: "sống cùng" },
+
+        // CHỦ ĐỀ 10: DESCRIBING PEOPLE
+        { english: "tall 📏", vietnamese: "cao" },
+        { english: "short 📏", vietnamese: "thấp" },
+        { english: "big 💪", vietnamese: "to, lớn" },
+        { english: "small 🤏", vietnamese: "nhỏ" },
+        { english: "fat 🍔", vietnamese: "mập" },
+        { english: "thin 🚶", vietnamese: "gầy" },
+        { english: "strong 💪", vietnamese: "khỏe mạnh" },
+        { english: "weak 😩", vietnamese: "yếu" },
+        { english: "beautiful 😍", vietnamese: "đẹp" },
+        { english: "pretty 😊", vietnamese: "xinh đẹp" },
+        { english: "handsome 😎", vietnamese: "đẹp trai" },
+        { english: "old 👴", vietnamese: "già" },
+        { english: "young 👶", vietnamese: "trẻ" },
+        { english: "clever 🧠", vietnamese: "thông minh" },
+        { english: "kind 🤗", vietnamese: "tốt bụng" },
+        { english: "friendly 👋", vietnamese: "thân thiện" },
+        { english: "funny 😂", vietnamese: "vui tính" },
+        { english: "nice 😊", vietnamese: "dễ thương" },
+        { english: "hair 💇", vietnamese: "tóc" },
+        { english: "long ↔️", vietnamese: "dài" },
+        { english: "curly ➰", vietnamese: "xoăn" },
+        { english: "straight 📏", vietnamese: "thẳng" },
+        { english: "eyes 👀", vietnamese: "mắt" },
+        { english: "big eyes 👀", vietnamese: "mắt to" },
+        { english: "small eyes 👀", vietnamese: "mắt nhỏ" },
+        { english: "nose 👃", vietnamese: "mũi" },
+        { english: "mouth 👄", vietnamese: "miệng" },
+        { english: "teeth 🦷", vietnamese: "răng" },
+        { english: "ears 👂", vietnamese: "tai" },
+        { english: "face 😊", vietnamese: "khuôn mặt" },
+        { english: "round ⭕", vietnamese: "tròn" },
+        { english: "thin face 😊", vietnamese: "mặt gầy" },
+        
+        // CHỦ ĐỀ 11: TALKING ABOUT FRIENDS
+        { english: "best friend 🤗", vietnamese: "bạn thân" },
+        { english: "close friend 🤗", vietnamese: "bạn thân thiết" },
+        { english: "boy 👦", vietnamese: "cậu bé" },
+        { english: "girl 👧", vietnamese: "cô bé" },
+        { english: "he 🧑", vietnamese: "anh ấy" },
+        { english: "she 👩", vietnamese: "cô ấy" },
+        { english: "they 🧑‍🤝‍🧑", vietnamese: "họ" },
+        { english: "we 🧑‍🤝‍🧑", vietnamese: "chúng tôi" },
+        { english: "study 📚", vietnamese: "học" },
+        { english: "talk 🗣️", vietnamese: "nói chuyện" },
+        { english: "laugh 😂", vietnamese: "cười" },
+        { english: "share 🤝", vietnamese: "chia sẻ" },
+        { english: "helpful 🙏", vietnamese: "hay giúp đỡ" },
+        { english: "talkative 🗣️", vietnamese: "nói nhiều" },
+        { english: "quiet 🤫", vietnamese: "ít nói" },
+        { english: "same class 🧑‍🏫", vietnamese: "cùng lớp" },
+        { english: "same school 🏫", vietnamese: "cùng trường" },
+        { english: "together 🧑‍🤝‍🧑", vietnamese: "cùng nhau" },
+        { english: "like 👍", vietnamese: "thích" },
+
+        // CHỦ ĐỀ 12: DAILY ROUTINES
+        { english: "get up 🌅", vietnamese: "thức dậy" },
+        { english: "wake up ⏰", vietnamese: "tỉnh dậy" },
+        { english: "wash my face 🧼", vietnamese: "rửa mặt" },
+        { english: "brush my teeth 🦷", vietnamese: "đánh răng" },
+        { english: "have breakfast 🍳", vietnamese: "ăn sáng" },
+        { english: "go to school 🏫", vietnamese: "đi học" },
+        { english: "have lunch 🥪", vietnamese: "ăn trưa" },
+        { english: "have dinner 🍝", vietnamese: "ăn tối" },
+        { english: "do homework ✍️", vietnamese: "làm bài tập" },
+        { english: "watch TV 📺", vietnamese: "xem ti vi" },
+        { english: "read books 📚", vietnamese: "đọc sách" },
+        { english: "play games 🎮", vietnamese: "chơi trò chơi" },
+        { english: "go to bed 🛌", vietnamese: "đi ngủ" },
+        { english: "take a shower 🚿", vietnamese: "tắm" },
+        { english: "clean the room 🧹", vietnamese: "dọn phòng" },
+        { english: "go shopping 🛍️", vietnamese: "đi mua sắm" },
+        { english: "listen to music 🎶", vietnamese: "nghe nhạc" },
+        { english: "play football ⚽", vietnamese: "chơi bóng đá" },
+        { english: "feed the dog 🦴", vietnamese: "cho chó ăn" },
+        { english: "water the plants 🪴", vietnamese: "tưới cây" },
+        { english: "help my mom 🤗", vietnamese: "giúp mẹ" },
+        { english: "get dressed 👕", vietnamese: "mặc quần áo" },
+        { english: "go to the park 🌳", vietnamese: "đi công viên" },
+        { english: "sleep 😴", vietnamese: "ngủ" },
+
+        // CHỦ ĐỀ 13-14-15: HOUSE, FURNITURE, OBJECTS
+        { english: "house 🏠", vietnamese: "ngôi nhà" },
+        { english: "home 🏡", vietnamese: "nhà, tổ ấm" },
+        { english: "room 🚪", vietnamese: "phòng" },
+        { english: "bedroom 🛌", vietnamese: "phòng ngủ" },
+        { english: "living room 🛋️", vietnamese: "phòng khách" },
+        { english: "kitchen 🍳", vietnamese: "nhà bếp" },
+        { english: "bathroom 🚽", vietnamese: "phòng tắm" },
+        { english: "dining room 🍽️", vietnamese: "phòng ăn" },
+        { english: "garden 🌳", vietnamese: "khu vườn" },
+        { english: "yard 뜰", vietnamese: "sân" },
+        { english: "roof 🏠", vietnamese: "mái nhà" },
+        { english: "wall 🧱", vietnamese: "tường" },
+        { english: "door 🚪", vietnamese: "cửa" },
+        { english: "window 🪟", vietnamese: "cửa sổ" },
+        { english: "floor 🚶", vietnamese: "sàn nhà" },
+        { english: "ceiling 💡", vietnamese: "trần nhà" },
+        { english: "stairs 🪜", vietnamese: "cầu thang" },
+        { english: "hall  hallway", vietnamese: "hành lang" },
+        { english: "garage 🚗", vietnamese: "nhà để xe" },
+        { english: "balcony 🌇", vietnamese: "ban công" },
+        { english: "behind 🔙", vietnamese: "phía sau" },
+        { english: "in front of ፊት", vietnamese: "phía trước" },
+        { english: "next to 👉", vietnamese: "bên cạnh" },
+        { english: "between  sandwiched", vietnamese: "ở giữa" },
+        { english: "on 🔛", vietnamese: "ở trên" },
+        { english: "under 👇", vietnamese: "ở dưới" },
+        { english: "in 📥", vietnamese: "ở trong" },
+        { english: "near 📍", vietnamese: "gần" },
+        { english: "table 🍽️", vietnamese: "cái bàn" },
+        { english: "bed 🛏️", vietnamese: "giường" },
+        { english: "lamp 💡", vietnamese: "đèn bàn" },
+        { english: "fan 🌬️", vietnamese: "quạt" },
+        { english: "picture 🖼️", vietnamese: "bức tranh" },
+        { english: "sofa 🛋️", vietnamese: "ghế sofa" },
+        { english: "armchair 🛋️", vietnamese: "ghế bành" },
+        { english: "carpet 🧘", vietnamese: "thảm" },
+        { english: "cupboard 🍽️", vietnamese: "tủ chén" },
+        { english: "wardrobe 👕", vietnamese: "tủ quần áo" },
+        { english: "shelf 📚", vietnamese: "kệ" },
+        { english: "mirror 🪞", vietnamese: "gương" },
+        { english: "television 📺", vietnamese: "ti vi" },
+        { english: "fridge 🧊", vietnamese: "tủ lạnh" },
+        { english: "cooker 🍳", vietnamese: "bếp nấu" },
+        { english: "sink 💧", vietnamese: "bồn rửa" },
+        { english: "tablecloth 🍽️", vietnamese: "khăn trải bàn" },
+        { english: "pillow 😴", vietnamese: "gối" },
+        { english: "blanket 🛌", vietnamese: "chăn" },
+        { english: "curtain 🪟", vietnamese: "rèm cửa" },
+        { english: "light 💡", vietnamese: "đèn" },
+        { english: "flower vase 🏺", vietnamese: "bình hoa" },
+        { english: "basket 🧺", vietnamese: "giỏ" },
+        { english: "toy box 🧸", vietnamese: "hộp đồ chơi" },
+        { english: "key 🔑", vietnamese: "chìa khóa" },
+        { english: "phone 📱", vietnamese: "điện thoại" },
+        { english: "bag 👜", vietnamese: "cặp, túi" },
+        { english: "box 📦", vietnamese: "cái hộp" },
+        { english: "broom 🧹", vietnamese: "cây chổi" },
+        { english: "mop 🧹", vietnamese: "cây lau nhà" },
+        { english: "towel 🧖", vietnamese: "khăn" },
+        { english: "cup ☕", vietnamese: "cái tách" },
+        { english: "plate 🍽️", vietnamese: "cái đĩa" },
+        { english: "spoon 🥄", vietnamese: "muỗng" },
+        { english: "fork 🍴", vietnamese: "nĩa" },
+        { english: "knife 🔪", vietnamese: "dao" },
+        { english: "bottle 🍾", vietnamese: "chai" },
+        { english: "glass 🥃", vietnamese: "ly" },
+        { english: "radio 📻", vietnamese: "đài" },
+        { english: "remote control 📺", vietnamese: "điều khiển" },
+        { english: "brush 🖌️", vietnamese: "bàn chải, lược" },
+        { english: "toothpaste 🦷", vietnamese: "kem đánh răng" },
+        { english: "soap 🧼", vietnamese: "xà phòng" },
+        { english: "shampoo 🧴", vietnamese: "dầu gội" },
+        { english: "comb 梳", vietnamese: "lược" },
+        { english: "tissue 🤧", vietnamese: "giấy lau" },
+        { english: "bin 🗑️", vietnamese: "thùng rác" },
+        { english: "umbrella ☂️", vietnamese: "ô, dù" },
+        
+        // CHỦ ĐỀ 16-17-18: SCHOOL OBJECTS & ACTIVITIES
+        { english: "schoolbag 🎒", vietnamese: "cặp đi học" },
+        { english: "color pencil 🖍️", vietnamese: "bút chì màu" },
+        { english: "blackboard 칠판", vietnamese: "bảng đen" },
+        { english: "whiteboard 칠판", vietnamese: "bảng trắng" },
+        { english: "uniform 👕", vietnamese: "đồng phục" },
+        { english: "bag strap 🎗️", vietnamese: "quai cặp" },
+        { english: "learn 🧠", vietnamese: "học" },
+        { english: "paint 🎨", vietnamese: "vẽ sơn, tô màu" },
+        { english: "speak 🗣️", vietnamese: "nói" },
+        { english: "play badminton 🏸", vietnamese: "chơi cầu lông" },
+        { english: "jump 🤸", vietnamese: "nhảy" },
+        { english: "run 🏃", vietnamese: "chạy" },
+        { english: "walk 🚶", vietnamese: "đi bộ" },
+        { english: "sit 🪑", vietnamese: "ngồi" },
+        { english: "stand 🧍", vietnamese: "đứng" },
+        { english: "open 👐", vietnamese: "mở" },
+        { english: "close 📕", vietnamese: "đóng" },
+        { english: "watch 👀", vietnamese: "xem" },
+        { english: "clean 🧹", vietnamese: "dọn dẹp" },
+        { english: "collect 🤲", vietnamese: "sưu tầm, thu thập" },
+        { english: "visit 🚶", vietnamese: "thăm" },
+        { english: "draw lines 〰️", vietnamese: "vẽ đường nối" },
+        { english: "ask ❓", vietnamese: "hỏi" },
+
+        // CHỦ ĐỀ 19-20: TIME & WEATHER
+        { english: "time ⏰", vietnamese: "thời gian" },
+        { english: "o'clock 🕖", vietnamese: "giờ đúng" },
+        { english: "half past 🕡", vietnamese: "rưỡi" },
+        { english: "quarter past 🕤", vietnamese: "chín giờ mười lăm" },
+        { english: "quarter to 🕘", vietnamese: "kém mười lăm" },
+        { english: "minute ⏱️", vietnamese: "phút" },
+        { english: "second ⏱️", vietnamese: "giây" },
+        { english: "morning ☀️", vietnamese: "buổi sáng" },
+        { english: "afternoon 🌇", vietnamese: "buổi chiều" },
+        { english: "evening 🌃", vietnamese: "buổi tối" },
+        { english: "night 🌙", vietnamese: "ban đêm" },
+        { english: "day 📅", vietnamese: "ngày" },
+        { english: "week 🗓️", vietnamese: "tuần" },
+        { english: "weekend 🎉", vietnamese: "cuối tuần" },
+        { english: "month 🈷️", vietnamese: "tháng" },
+        { english: "year 📆", vietnamese: "năm" },
+        { english: "today 📅", vietnamese: "hôm nay" },
+        { english: "yesterday ⏪", vietnamese: "hôm qua" },
+        { english: "tomorrow ⏩", vietnamese: "ngày mai" },
+        { english: "Monday  M", vietnamese: "thứ hai" },
+        { english: "Tuesday T", vietnamese: "thứ ba" },
+        { english: "Wednesday W", vietnamese: "thứ tư" },
+        { english: "Thursday T", vietnamese: "thứ năm" },
+        { english: "Friday F", vietnamese: "thứ sáu" },
+        { english: "Saturday S", vietnamese: "thứ bảy" },
+        { english: "Sunday S", vietnamese: "chủ nhật" },
+        { english: "morning class ☀️", vietnamese: "lớp buổi sáng" },
+        { english: "break time 休憩", vietnamese: "giờ ra chơi" },
+        { english: "subject 📚", vietnamese: "môn học" },
+        { english: "start ▶️", vietnamese: "bắt đầu" },
+        { english: "finish 🏁", vietnamese: "kết thúc" },
+        { english: "before ⏪", vietnamese: "trước" },
+        { english: "after ⏩", vietnamese: "sau" },
+        { english: "at 📍", vietnamese: "vào lúc" },
+        { english: "in 📥", vietnamese: "trong, vào" },
+        { english: "on 🔛", vietnamese: "vào (ngày)" },
+        { english: "every ♾️", vietnamese: "mỗi" },
+        { english: "always ✅", vietnamese: "luôn luôn" },
+        { english: "usually 👍", vietnamese: "thường xuyên" },
+        { english: "sometimes 🤔", vietnamese: "thỉnh thoảng" },
+        { english: "never ❌", vietnamese: "không bao giờ" },
+        { english: "weather 🌦️", vietnamese: "thời tiết" },
+        { english: "sunny ☀️", vietnamese: "có nắng" },
+        { english: "rainy 🌧️", vietnamese: "có mưa" },
+        { english: "cloudy ☁️", vietnamese: "nhiều mây" },
+        { english: "windy 🌬️", vietnamese: "có gió" },
+        { english: "stormy ⛈️", vietnamese: "có bão" },
+        { english: "foggy 🌫️", vietnamese: "có sương mù" },
+        { english: "snowy ❄️", vietnamese: "có tuyết" },
+        { english: "warm 😊", vietnamese: "ấm áp" },
+        { english: "cool 😎", vietnamese: "mát mẻ" },
+        { english: "wet 💧", vietnamese: "ướt" },
+        { english: "dry 🌵", vietnamese: "khô ráo" },
+        { english: "snow ❄️", vietnamese: "tuyết" },
+        { english: "rain 🌧️", vietnamese: "mưa" },
+        { english: "wind 🌬️", vietnamese: "gió" },
+        { english: "sun ☀️", vietnamese: "mặt trời" },
+        { english: "cloud ☁️", vietnamese: "mây" },
+        { english: "sky 🌌", vietnamese: "bầu trời" },
+        { english: "rainbow 🌈", vietnamese: "cầu vồng" },
+        { english: "season 🍂", vietnamese: "mùa" },
+        { english: "spring 🌸", vietnamese: "mùa xuân" },
+        { english: "summer ☀️", vietnamese: "mùa hè" },
+        { english: "autumn 🍂", vietnamese: "mùa thu" },
+        { english: "fall 🍂", vietnamese: "mùa thu" },
+        { english: "winter ❄️", vietnamese: "mùa đông" },
+        { english: "favorite season ❤️", vietnamese: "mùa yêu thích" },
+        { english: "wear 👕", vietnamese: "mặc" },
+        { english: "boots 👢", vietnamese: "ủng" },
+        { english: "raincoat 🧥", vietnamese: "áo mưa" },
+        { english: "gloves 🧤", vietnamese: "găng tay" },
+        { english: "scarf 🧣", vietnamese: "khăn quàng" },
+        
+        // CHỦ ĐỀ 21-23: CLOTHES & ANIMALS
+        { english: "clothes 👕", vietnamese: "quần áo" },
+        { english: "dress 👗", vietnamese: "váy liền" },
+        { english: "skirt 👗", vietnamese: "váy" },
+        { english: "jeans 👖", vietnamese: "quần jean" },
+        { english: "sweater 🧥", vietnamese: "áo len" },
+        { english: "cap 🧢", vietnamese: "mũ lưỡi trai" },
+        { english: "sandals 👡", vietnamese: "dép" },
+        { english: "socks 🧦", vietnamese: "tất" },
+        { english: "belt 🎗️", vietnamese: "thắt lưng" },
+        { english: "sunglasses 😎", vietnamese: "kính râm" },
+        { english: "pajamas 😴", vietnamese: "đồ ngủ" },
+        { english: "swimsuit 👙", vietnamese: "đồ bơi" },
+        { english: "put on 👕", vietnamese: "mặc vào" },
+        { english: "take off 👟", vietnamese: "cởi ra" },
+        { english: "red 🔴", vietnamese: "đỏ" },
+        { english: "blue 🔵", vietnamese: "xanh dương" },
+        { english: "yellow 🟡", vietnamese: "vàng" },
+        { english: "green 🟢", vietnamese: "xanh lá cây" },
+        { english: "pink 🌸", vietnamese: "hồng" },
+        { english: "purple 🟣", vietnamese: "tím" },
+        { english: "orange 🟠", vietnamese: "cam" },
+        { english: "white ⚪", vietnamese: "trắng" },
+        { english: "grey 🌫️", vietnamese: "xám" },
+        { english: "animal 🐾", vietnamese: "động vật" },
+        { english: "cat 🐈", vietnamese: "mèo" },
+        { english: "dog 🐕", vietnamese: "chó" },
+        { english: "bird 🐦", vietnamese: "chim" },
+        { english: "fish 🐠", vietnamese: "cá" },
+        { english: "rabbit 🐇", vietnamese: "thỏ" },
+        { english: "mouse 🐁", vietnamese: "chuột" },
+        { english: "cow 🐄", vietnamese: "bò" },
+        { english: "goat 🐐", vietnamese: "dê" },
+        { english: "sheep 🐑", vietnamese: "cừu" },
+        { english: "pig 🐖", vietnamese: "heo" },
+        { english: "duck 🦆", vietnamese: "vịt" },
+        { english: "hen 🐔", vietnamese: "gà mái" },
+        { english: "chicken 🐔", vietnamese: "gà" },
+        { english: "elephant 🐘", vietnamese: "voi" },
+        { english: "tiger 🐅", vietnamese: "hổ" },
+        { english: "lion 🦁", vietnamese: "sư tử" },
+        { english: "monkey 🐒", vietnamese: "khỉ" },
+        { english: "bear 🐻", vietnamese: "gấu" },
+        { english: "panda 🐼", vietnamese: "gấu trúc" },
+        { english: "giraffe 🦒", vietnamese: "hươu cao cổ" },
+        { english: "zebra 🦓", vietnamese: "ngựa vằn" },
+        { english: "horse 🐎", vietnamese: "ngựa" },
+        { english: "crocodile 🐊", vietnamese: "cá sấu" },
+        { english: "snake 🐍", vietnamese: "rắn" },
+        { english: "frog 🐸", vietnamese: "ếch" },
+        { english: "turtle 🐢", vietnamese: "rùa" },
+        { english: "dolphin 🐬", vietnamese: "cá heo" },
+        { english: "whale 🐋", vietnamese: "cá voi" },
+        { english: "penguin 🐧", vietnamese: "chim cánh cụt" },
+        { english: "fox 🦊", vietnamese: "cáo" },
+        { english: "wolf 🐺", vietnamese: "sói" },
+        { english: "squirrel 🐿️", vietnamese: "sóc" },
+        { english: "parrot 🦜", vietnamese: "vẹt" },
+        { english: "rooster 🐓", vietnamese: "gà trống" },
+        { english: "camel 🐪", vietnamese: "lạc đà" },
+        { english: "insect 🐜", vietnamese: "côn trùng" },
+        { english: "bee 🐝", vietnamese: "ong" },
+        { english: "butterfly 🦋", vietnamese: "bướm" },
+        { english: "ant 🐜", vietnamese: "kiến" },
+        { english: "spider 🕷️", vietnamese: "nhện" },
+        { english: "pet 🐶", vietnamese: "thú cưng" },
+        { english: "farm animal 🐄", vietnamese: "vật nuôi" },
+        { english: "wild animal 🐅", vietnamese: "động vật hoang dã" },
+        { english: "zoo 🦓", vietnamese: "sở thú" },
+
+        // CHỦ ĐỀ 24: NATURE & PLACES
+        { english: "nature 🌳", vietnamese: "thiên nhiên" },
+        { english: "tree 🌳", vietnamese: "cây" },
+        { english: "flower 🌸", vietnamese: "hoa" },
+        { english: "grass 🌿", vietnamese: "cỏ" },
+        { english: "leaf 🍃", vietnamese: "lá" },
+        { english: "forest 🌲", vietnamese: "rừng" },
+        { english: "jungle 🌴", vietnamese: "rừng rậm" },
+        { english: "mountain ⛰️", vietnamese: "núi" },
+        { english: "hill 🌄", vietnamese: "đồi" },
+        { english: "river 🏞️", vietnamese: "sông" },
+        { english: "lake 🏞️", vietnamese: "hồ" },
+        { english: "sea 🌊", vietnamese: "biển" },
+        { english: "ocean 🌊", vietnamese: "đại dương" },
+        { english: "beach 🏖️", vietnamese: "bãi biển" },
+        { english: "island 🏝️", vietnamese: "hòn đảo" },
+        { english: "field 🌾", vietnamese: "cánh đồng" },
+        { english: "farm 🚜", vietnamese: "trang trại" },
+        { english: "park 🌳", vietnamese: "công viên" },
+        { english: "road 🛣️", vietnamese: "con đường" },
+        { english: "street 🏘️", vietnamese: "đường phố" },
+        { english: "bridge 🌉", vietnamese: "cây cầu" },
+        { english: "shop 🏪", vietnamese: "cửa hàng" },
+        { english: "market 🛒", vietnamese: "chợ" },
+        { english: "hospital 🏥", vietnamese: "bệnh viện" },
+        { english: "post office 🏤", vietnamese: "bưu điện" },
+        { english: "bank 🏦", vietnamese: "ngân hàng" },
+        { english: "cinema 🎬", vietnamese: "rạp chiếu phim" },
+        { english: "museum 🏛️", vietnamese: "bảo tàng" },
+        { english: "stadium 🏟️", vietnamese: "sân vận động" },
+        { english: "restaurant 🍽️", vietnamese: "nhà hàng" },
+        { english: "hotel 🏨", vietnamese: "khách sạn" },
+        { english: "station 🚉", vietnamese: "nhà ga" },
+        { english: "bus stop 🚏", vietnamese: "trạm xe buýt" },
+        { english: "airport ✈️", vietnamese: "sân bay" },
+        { english: "city 🏙️", vietnamese: "thành phố" },
+        { english: "town 🏘️", vietnamese: "thị trấn" },
+        { english: "village 🏡", vietnamese: "ngôi làng" },
+        { english: "country 🏞️", vietnamese: "đất nước, nông thôn" },
+        { english: "place 📍", vietnamese: "nơi chốn" },
+        { english: "riverbank 🏞️", vietnamese: "bờ sông" },
+        { english: "desert 🌵", vietnamese: "sa mạc" },
+        { english: "cave 🦇", vietnamese: "hang động" },
+
+        // CHỦ ĐỀ 25: TRANSPORTATION
+        { english: "transport 🚗", vietnamese: "phương tiện giao thông" },
+        { english: "car 🚗", vietnamese: "ô tô" },
+        { english: "bus 🚌", vietnamese: "xe buýt" },
+        { english: "bicycle 🚲", vietnamese: "xe đạp" },
+        { english: "bike 🚲", vietnamese: "xe đạp" },
+        { english: "motorbike 🏍️", vietnamese: "xe máy" },
+        { english: "scooter 🛵", vietnamese: "xe tay ga" },
+        { english: "train 🚆", vietnamese: "tàu hỏa" },
+        { english: "plane ✈️", vietnamese: "máy bay" },
+        { english: "airplane ✈️", vietnamese: "máy bay" },
+        { english: "boat ⛵", vietnamese: "thuyền" },
+        { english: "ship 🚢", vietnamese: "tàu thủy" },
+        { english: "taxi 🚕", vietnamese: "xe taxi" },
+        { english: "truck 🚚", vietnamese: "xe tải" },
+        { english: "ambulance 🚑", vietnamese: "xe cứu thương" },
+        { english: "fire truck 🚒", vietnamese: "xe cứu hỏa" },
+        { english: "police car 🚓", vietnamese: "xe cảnh sát" },
+        { english: "train station 🚉", vietnamese: "nhà ga" },
+        { english: "traffic light 🚦", vietnamese: "đèn giao thông" },
+        { english: "helmet ⛑️", vietnamese: "mũ bảo hiểm" },
+        { english: "seat belt 💺", vietnamese: "dây an toàn" },
+
+        // CHỦ ĐỀ 26: OCCUPATIONS
+        { english: "job 💼", vietnamese: "nghề nghiệp" },
+        { english: "work 🏢", vietnamese: "làm việc" },
+        { english: "worker 👷", vietnamese: "công nhân" },
+        { english: "doctor 👨‍⚕️", vietnamese: "bác sĩ" },
+        { english: "dentist 🦷", vietnamese: "nha sĩ" },
+        { english: "farmer 👨‍🌾", vietnamese: "nông dân" },
+        { english: "driver 👨‍✈️", vietnamese: "tài xế" },
+        { english: "pilot 👨‍✈️", vietnamese: "phi công" },
+        { english: "policeman 👮", vietnamese: "cảnh sát" },
+        { english: "policewoman 👮‍♀️", vietnamese: "nữ cảnh sát" },
+        { english: "firefighter 👨‍🚒", vietnamese: "lính cứu hỏa" },
+        { english: "postman 📮", vietnamese: "người đưa thư" },
+        { english: "mail carrier 💌", vietnamese: "người phát thư" },
+        { english: "shop assistant 👨‍💼", vietnamese: "nhân viên bán hàng" },
+        { english: "cashier 💰", vietnamese: "thu ngân" },
+        { english: "waiter 🤵", vietnamese: "nam phục vụ" },
+        { english: "waitress 🤵‍♀️", vietnamese: "nữ phục vụ" },
+        { english: "cook 👨‍🍳", vietnamese: "đầu bếp" },
+        { english: "chef 👨‍🍳", vietnamese: "bếp trưởng" },
+        { english: "baker 👨‍🍳", vietnamese: "thợ làm bánh" },
+        { english: "tailor 🧵", vietnamese: "thợ may" },
+        { english: "hairdresser 💇‍♀️", vietnamese: "thợ cắt tóc" },
+        { english: "barber 💈", vietnamese: "thợ cạo tóc" },
+        { english: "artist 🎨", vietnamese: "họa sĩ" },
+        { english: "singer 🎤", vietnamese: "ca sĩ" },
+        { english: "dancer 💃", vietnamese: "vũ công" },
+        { english: "actor 🎭", vietnamese: "diễn viên nam" },
+        { english: "actress 🎭", vietnamese: "diễn viên nữ" },
+        { english: "engineer 👷", vietnamese: "kỹ sư" },
+        { english: "builder 🏗️", vietnamese: "thợ xây" },
+        { english: "mechanic 👨‍🔧", vietnamese: "thợ sửa máy" },
+        { english: "cleaner 🧹", vietnamese: "lao công" },
+        { english: "scientist 👩‍🔬", vietnamese: "nhà khoa học" },
+        { english: "vet 👨‍⚕️", vietnamese: "bác sĩ thú y" },
+        { english: "fisherman 🎣", vietnamese: "ngư dân" },
+        { english: "soldier 💂", vietnamese: "người lính" },
+        { english: "painter 🎨", vietnamese: "thợ sơn" },
+        { english: "gardener 👨‍🌾", vietnamese: "người làm vườn" },
+        { english: "photographer 📸", vietnamese: "nhiếp ảnh gia" },
+        { english: "writer ✍️", vietnamese: "nhà văn" },
+        { english: "reporter 🎤", vietnamese: "phóng viên" },
+        { english: "musician 👨‍🎤", vietnamese: "nhạc sĩ" },
+
+        // CHỦ ĐỀ 27: SCHOOL SUBJECTS
+        { english: "textbook 📙", vietnamese: "sách giáo khoa" },
+        { english: "storybook 📖", vietnamese: "sách truyện" },
+        { english: "math 🧮", vietnamese: "môn Toán" },
+        { english: "English 🏴󠁧󠁢󠁥󠁮󠁧󠁿", vietnamese: "môn tiếng Anh" },
+        { english: "Vietnamese 🇻🇳", vietnamese: "môn tiếng Việt" },
+        { english: "science 🔬", vietnamese: "môn Khoa học" },
+        { english: "music 🎶", vietnamese: "môn Âm nhạc" },
+        { english: "art 🎨", vietnamese: "môn Mỹ thuật" },
+        { english: "P.E. 🏃", vietnamese: "môn Thể dục" },
+        { english: "IT 💻", vietnamese: "môn Tin học" },
+        { english: "history 📜", vietnamese: "môn Lịch sử" },
+        { english: "geography 🗺️", vietnamese: "môn Địa lý" },
+        { english: "lesson 📖", vietnamese: "tiết học" },
+        { english: "homework ✍️", vietnamese: "bài tập về nhà" },
+        { english: "test 📝", vietnamese: "bài kiểm tra" },
+        { english: "exam ✍️", vietnamese: "kỳ thi" },
+        
+        // CHỦ ĐỀ 35: SPORTS & GAMES
+        { english: "sport ⚽", vietnamese: "thể thao" },
+        { english: "game 🎮", vietnamese: "trò chơi" },
+        { english: "football ⚽", vietnamese: "bóng đá" },
+        { english: "basketball 🏀", vietnamese: "bóng rổ" },
+        { english: "volleyball 🏐", vietnamese: "bóng chuyền" },
+        { english: "badminton 🏸", vietnamese: "cầu lông" },
+        { english: "tennis 🎾", vietnamese: "quần vợt" },
+        { english: "table tennis 🏓", vietnamese: "bóng bàn" },
+        { english: "swimming 🏊", vietnamese: "bơi lội" },
+        { english: "skate 🛹", vietnamese: "trượt patin" },
+        { english: "ski 🎿", vietnamese: "trượt tuyết" },
+        { english: "ride a bike 🚲", vietnamese: "đi xe đạp" },
+        { english: "play chess ♟️", vietnamese: "chơi cờ vua" },
+        { english: "play cards 🃏", vietnamese: "chơi bài" },
+        { english: "hide-and-seek 🫣", vietnamese: "trò trốn tìm" },
+        { english: "tug of war 밧줄", vietnamese: "trò kéo co" },
+        { english: "skipping rope 🪢", vietnamese: "nhảy dây" },
+        { english: "race 🏁", vietnamese: "cuộc đua" },
+        { english: "football player ⚽", vietnamese: "cầu thủ bóng đá" },
+        { english: "team 🧑‍🤝‍🧑", vietnamese: "đội" },
+        { english: "win 🏆", vietnamese: "thắng" },
+        { english: "lose 👎", vietnamese: "thua" },
+        { english: "score 💯", vietnamese: "điểm số" },
+        { english: "referee 👨‍⚖️", vietnamese: "trọng tài" },
+        { english: "whistle 😗", vietnamese: "còi" },
+        { english: "ball ⚽", vietnamese: "quả bóng" },
+        { english: "bat 🏏", vietnamese: "gậy (bóng chày)" },
+        { english: "net 🥅", vietnamese: "lưới" },
+        { english: "field  मैदान", vietnamese: "sân bóng" },
+        { english: "swimming pool 🏊", vietnamese: "hồ bơi" },
+        { english: "sports day 🏅", vietnamese: "ngày hội thể thao" },
+        { english: "exercise 💪", vietnamese: "tập thể dục" },
+        { english: "practice 🏋️", vietnamese: "luyện tập" },
+        { english: "coach 👨‍🏫", vietnamese: "huấn luyện viên" },
+        { english: "player 🏃", vietnamese: "người chơi" },
+        { english: "cheer 🎉", vietnamese: "cổ vũ" },
+        { english: "goal 🥅", vietnamese: "bàn thắng" },
+        { english: "run fast 🏃💨", vietnamese: "chạy nhanh" },
+        { english: "jump rope 🪢", vietnamese: "nhảy dây" },
+        { english: "swim 🏊", vietnamese: "bơi" },
+        { english: "play sports ⚽", vietnamese: "chơi thể thao" },
+        { english: "healthy 💪", vietnamese: "khỏe mạnh" }
+      ];
+
+
+      // --- Utility Functions ---
+      const EMOJI_REGEX = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{3000}-\u{303F}]/gu;
+      const stripEmoji = (str) => str.replace(EMOJI_REGEX, '').trim();
+      const getEmoji = (str) => (str.match(EMOJI_REGEX) || []).join('');
+
+      const shuffleArray = (array) => {
+        const newArray = [...array];
+        for (let i = newArray.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+        }
+        return newArray;
+      };
+
+      const scramblePhrase = (phrase) => {
+          let letterIdCounter = 0;
+          const cleanPhrase = phrase.replace(/[^a-zA-Z\s-]/g, '');
+
+          return cleanPhrase.split(' ').map(word => {
+              if (!word) return [];
+              let scrambledChars;
+              do {
+                  scrambledChars = shuffleArray(word.split(''));
+              } while (scrambledChars.join('') === word && word.length > 1);
+              
+              return scrambledChars.map(char => ({
+                  char,
+                  id: letterIdCounter++,
+                  used: false,
+              }));
+          }).filter(wordArray => wordArray.length > 0);
+      };
+
+      const speak = (text, rate = 1.0, lang = 'en-US') => {
+          if ('speechSynthesis' in window) {
+              window.speechSynthesis.cancel();
+              const utterance = new SpeechSynthesisUtterance(text);
+              utterance.lang = lang;
+              utterance.rate = rate;
+              utterance.volume = 1;
+              window.speechSynthesis.speak(utterance);
+          }
+      };
+      
+      const spellAndSpeak = (word, setSpellingIndex, onEnd) => {
+          if (!('speechSynthesis' in window)) {
+              onEnd();
+              return;
+          }
+          window.speechSynthesis.cancel();
+          const letterVisualIndices = [];
+          word.split('').forEach((char, index) => {
+              if (char.trim() !== '' && char !== '-') {
+                  letterVisualIndices.push(index);
+              }
+          });
+          const lettersToSpell = word.replace(/[\s-]/g, '').split('');
+          let audioLetterIndex = 0;
+          const groupSize = lettersToSpell.length > 5 ? (Math.random() > 0.5 ? 4 : 3) : 3;
+
+          const speakNextLetter = () => {
+              if (audioLetterIndex < lettersToSpell.length) {
+                  const visualIndex = letterVisualIndices[audioLetterIndex];
+                  setSpellingIndex(visualIndex);
+                  const utterance = new SpeechSynthesisUtterance(lettersToSpell[audioLetterIndex]);
+                  utterance.lang = 'en-US';
+                  utterance.rate = 4.0;
+                  utterance.pitch = 1.2;
+                  utterance.volume = 1;
+                  utterance.onend = () => {
+                      audioLetterIndex++;
+                      const isGroupEnd = audioLetterIndex % groupSize === 0 && audioLetterIndex < lettersToSpell.length;
+                      setTimeout(speakNextLetter, isGroupEnd ? 200 : 40);
+                  };
+                  window.speechSynthesis.speak(utterance);
+              } else {
+                  setSpellingIndex(null);
+                  const fullWordUtterance = new SpeechSynthesisUtterance(word);
+                  fullWordUtterance.lang = 'en-US';
+                  fullWordUtterance.rate = 1.0;
+                  fullWordUtterance.volume = 1;
+                  fullWordUtterance.onend = onEnd;
+                  setTimeout(() => window.speechSynthesis.speak(fullWordUtterance), 300);
+              }
+          };
+          speakNextLetter();
+      };
+
+      const spellThenSpeakTwice = (word) => {
+          if (!('speechSynthesis' in window)) return;
+          window.speechSynthesis.cancel();
+          const lettersToSpell = word.replace(/[\s-]/g, '').split('');
+          let audioLetterIndex = 0;
+          const groupSize = lettersToSpell.length > 5 ? (Math.random() > 0.5 ? 4 : 3) : 3;
+
+          const speakNextLetter = () => {
+              if (audioLetterIndex < lettersToSpell.length) {
+                  const utterance = new SpeechSynthesisUtterance(lettersToSpell[audioLetterIndex]);
+                  utterance.lang = 'en-US';
+                  utterance.rate = 4.0;
+                  utterance.pitch = 1.2;
+                  utterance.volume = 1;
+                  utterance.onend = () => {
+                      audioLetterIndex++;
+                      const isGroupEnd = audioLetterIndex % groupSize === 0 && audioLetterIndex < lettersToSpell.length;
+                      setTimeout(speakNextLetter, isGroupEnd ? 200 : 40);
+                  };
+                  window.speechSynthesis.speak(utterance);
+              } else {
+                  const speakFullWord = (onEndCallback) => {
+                       const fullWordUtterance = new SpeechSynthesisUtterance(word);
+                       fullWordUtterance.lang = 'en-US';
+                       fullWordUtterance.rate = 1.0;
+                       fullWordUtterance.volume = 1;
+                       if (onEndCallback) {
+                           fullWordUtterance.onend = onEndCallback;
+                       }
+                       window.speechSynthesis.speak(fullWordUtterance);
+                  };
+                  setTimeout(() => {
+                      speakFullWord(() => {
+                          setTimeout(() => speakFullWord(), 300);
+                      });
+                  }, 400);
+              }
+          };
+          speakNextLetter();
+      };
+      
+      // --- UI Components ---
+      const SpeakerIcon = ({ className }) => (
+          React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className: className, fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" },
+              React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" })
+          )
+      );
+
+      const StartScreen = ({ onStart }) => {
+          const [name, setName] = useState('');
+          return (
+              React.createElement('div', { className: "flex flex-col items-center justify-center h-full p-4 animate-pop" },
+                  React.createElement('h1', { className: "text-5xl font-bold text-cyan-600 mb-4" }, "Word Scramble"),
+                  React.createElement('p', { className: "text-xl text-slate-600 mb-8" }, "Kiểm tra vốn từ vựng của bạn!"),
+                  React.createElement('input', {
+                      type: "text",
+                      value: name,
+                      onChange: (e) => setName(e.target.value),
+                      placeholder: "Nhập tên của bạn",
+                      className: "w-full max-w-sm px-4 py-3 bg-white border-2 border-slate-300 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition"
+                  }),
+                  React.createElement('button', {
+                      onClick: () => onStart(name.trim() || 'Player'),
+                      disabled: !name.trim(),
+                      className: "mt-6 w-full max-w-sm px-6 py-3 bg-cyan-500 text-white font-bold rounded-lg hover:bg-cyan-400 disabled:bg-slate-300 disabled:cursor-not-allowed transition-transform transform hover:scale-105"
+                  }, "Bắt đầu")
+              )
+          );
+      };
+
+      const GameScreen = ({ playerName, score, currentWord, wordIndex, totalWords, onCorrect, onIncorrect, onNextWord }) => {
+          const [scrambled, setScrambled] = useState([]);
+          const [playerAnswer, setPlayerAnswer] = useState([]);
+          const [incorrectAttempts, setIncorrectAttempts] = useState(0);
+          const [isWrong, setIsWrong] = useState(false);
+          const [isCorrect, setIsCorrect] = useState(false);
+          const [spelledLetterIndex, setSpelledLetterIndex] = useState(null);
+          
+          const wordText = currentWord.english;
+          const emoji = useMemo(() => getEmoji(wordText), [wordText]);
+          const wordTextWithoutEmoji = useMemo(() => stripEmoji(wordText), [wordText]);
+      
+          const wordParts = useMemo(() => wordTextWithoutEmoji.split(' '), [wordTextWithoutEmoji]);
+          const totalLengthWithoutSpaces = useMemo(() => wordParts.join('').length, [wordParts]);
+      
+          const resetForNewWord = useCallback(() => {
+              setIsCorrect(false);
+              setSpelledLetterIndex(null);
+              setScrambled(scramblePhrase(wordTextWithoutEmoji));
+              setPlayerAnswer([]);
+              setIncorrectAttempts(0);
+              setIsWrong(false);
+              spellThenSpeakTwice(wordTextWithoutEmoji);
+          }, [wordTextWithoutEmoji]);
+      
+          useEffect(() => {
+              resetForNewWord();
+          }, [currentWord, resetForNewWord]);
+          
+          const handleLetterClick = (letter) => {
+              if (isCorrect || isWrong) return;
+              setPlayerAnswer([...playerAnswer, letter]);
+              setScrambled(prevScrambled => 
+                  prevScrambled.map(wordGroup => 
+                      wordGroup.map(l => l.id === letter.id ? { ...l, used: true } : l)
+                  )
+              );
+          };
+          
+          const handleUndo = () => {
+              if (playerAnswer.length === 0 || isCorrect || isWrong) return;
+              const lastLetter = playerAnswer[playerAnswer.length - 1];
+              setPlayerAnswer(playerAnswer.slice(0, -1));
+              setScrambled(prevScrambled => 
+                  prevScrambled.map(wordGroup => 
+                      wordGroup.map(l => l.id === lastLetter.id ? { ...l, used: false } : l)
+                  )
+              );
+          };
+      
+          const handleCheck = useCallback(() => {
+              if (isCorrect) return;
+      
+              let tempAnswer = [...playerAnswer];
+              const reconstructedAnswer = wordParts.map(part =>
+                  tempAnswer.splice(0, part.length).map(l => l.char).join('')
+              ).join(' ');
+      
+              if (reconstructedAnswer === wordTextWithoutEmoji) {
+                  setIsCorrect(true);
+                  const points = incorrectAttempts < 2 ? 10 : 0;
+                  onCorrect(points);
+                  spellAndSpeak(wordTextWithoutEmoji, setSpelledLetterIndex, () => {
+                      setTimeout(onNextWord, 500);
+                  });
+              } else {
+                  setIsWrong(true);
+                  onIncorrect(currentWord);
+                  setIncorrectAttempts(prev => prev + 1);
+                  setTimeout(() => {
+                      setPlayerAnswer([]);
+                      setScrambled(prev => prev.map(group => group.map(l => ({ ...l, used: false }))));
+                      setIsWrong(false);
+                  }, 800);
+              }
+          }, [isCorrect, playerAnswer, wordTextWithoutEmoji, incorrectAttempts, onCorrect, onIncorrect, onNextWord, setSpelledLetterIndex, wordParts, currentWord]);
+      
+          useEffect(() => {
+              if (!isCorrect && !isWrong && playerAnswer.length > 0 && playerAnswer.length === totalLengthWithoutSpaces) {
+                  handleCheck();
+              }
+          }, [playerAnswer, totalLengthWithoutSpaces, isCorrect, isWrong, handleCheck]);
+      
+          const renderPlayerAnswer = () => {
+              if (playerAnswer.length === 0) {
+                  return React.createElement('span', { className: "text-xl text-slate-400" }, "Gõ từ vào đây");
+              }
+      
+              const elements = [];
+              let letterIndex = 0;
+          
+              wordParts.forEach((part, partIndex) => {
+                  const wordLetters = playerAnswer.slice(letterIndex, letterIndex + part.length);
+                  
+                  wordLetters.forEach((letter) => {
+                      elements.push(
+                          React.createElement('span', { key: letter.id, className: "text-4xl font-bold tracking-widest mx-1 animate-pop" }, letter.char)
+                      );
+                  });
+          
+                  if (partIndex < wordParts.length - 1 && playerAnswer.length > letterIndex + part.length) {
+                      elements.push(React.createElement('span', { key: `space-${partIndex}`, className: "w-6 md:w-8 inline-block" }));
+                  }
+          
+                  letterIndex += part.length;
+              });
+          
+              return React.createElement('div', { className: "flex items-center justify-center flex-wrap" }, ...elements);
+          };
+      
+          return React.createElement('div', { className: "flex flex-col h-full p-4 md:p-8" },
+              React.createElement('div', { className: "flex justify-between items-center mb-6" },
+                  React.createElement('div', null,
+                      React.createElement('p', { className: "text-xl font-semibold text-cyan-600" }, playerName),
+                      React.createElement('p', { className: "text-3xl font-bold" }, `Điểm: ${score}`)
+                  ),
+                  React.createElement('p', { className: "text-lg font-semibold bg-cyan-100 text-cyan-800 px-4 py-2 rounded-lg" }, `${wordIndex + 1} / ${totalWords}`)
+              ),
+              React.createElement('div', { className: "flex-grow flex flex-col items-center justify-center bg-white/70 backdrop-blur-sm rounded-xl p-6 shadow-xl" },
+                  React.createElement('div', { className: "text-center" },
+                      React.createElement('p', { className: "text-lg text-slate-500 mb-2" }, "Gợi ý (Tiếng Việt):"),
+                      React.createElement('p', { className: "text-3xl md:text-4xl font-bold text-cyan-700" },
+                          currentWord.vietnamese,
+                          React.createElement('span', { className: "text-4xl" }, ` ${emoji}`)
+                      )
+                  ),
+                  React.createElement('div', { className: `my-8 min-h-[60px] w-full max-w-lg flex items-center justify-center flex-wrap bg-sky-50 rounded-lg p-4 border-2 ${isWrong ? 'border-red-500 animate-shake' : 'border-slate-300'}` },
+                      isCorrect ? (
+                          wordTextWithoutEmoji.split('').map((char, index) => (
+                               char === ' ' ? React.createElement('span', { key: index, className: "w-6 md:w-8 inline-block" }) :
+                               char === '-' ? React.createElement('span', { key: index, className: "text-4xl font-bold tracking-widest mx-1" }, "-") :
+                               React.createElement('span', { key: index, className: `text-4xl font-bold tracking-widest mx-1 transition-transform duration-150 ${index === spelledLetterIndex ? 'scale-125 text-cyan-500' : ''}` }, char)
+                          ))
+                      ) : (
+                          renderPlayerAnswer()
+                      )
+                  ),
+                  React.createElement('div', { className: "flex flex-wrap justify-center items-center gap-x-6 gap-y-3 md:gap-y-4 mb-8" },
+                       scrambled.map((wordGroup, groupIndex) => (
+                          React.createElement('div', { key: groupIndex, className: "flex flex-wrap justify-center gap-2 md:gap-4" },
+                              wordGroup.map((letter) => (
+                                  React.createElement('button', {
+                                    key: letter.id,
+                                    onClick: () => handleLetterClick(letter),
+                                    disabled: letter.used || isCorrect || isWrong,
+                                    className: "w-12 h-12 md:w-16 md:h-16 bg-cyan-500 text-white text-2xl md:text-3xl font-bold rounded-lg shadow-md hover:bg-cyan-400 disabled:bg-slate-300 disabled:text-slate-500 disabled:opacity-70 disabled:cursor-not-allowed transition-all transform hover:scale-110 disabled:transform-none"
+                                  }, letter.char)
+                              ))
+                          )
+                      ))
+                  ),
+                  React.createElement('div', { className: "flex items-center gap-4" },
+                      React.createElement('button', { onClick: handleUndo, className: "px-6 py-3 bg-slate-200 rounded-lg hover:bg-slate-300 transition disabled:opacity-50", disabled: isCorrect || isWrong }, "Hoàn tác"),
+                      React.createElement('button', { onClick: () => speak(wordTextWithoutEmoji), className: "p-4 bg-slate-200 rounded-full hover:bg-slate-300 transition" }, React.createElement(SpeakerIcon, { className: "w-6 h-6" }))
+                  )
+              )
+          );
+      };
+      
+      const EndScreen = ({ score, incorrectWords, onRestart, onRetryIncorrect }) => {
+          const [showIncorrect, setShowIncorrect] = useState(false);
+      
+          return (
+              React.createElement('div', { className: "flex flex-col items-center justify-center h-full p-4 animate-pop" },
+                  React.createElement('h2', { className: "text-5xl font-bold text-cyan-600 mb-2" }, "Kết thúc!"),
+                  React.createElement('p', { className: "text-3xl mb-8" }, `Điểm cuối cùng: ${score}`),
+                  React.createElement('div', { className: "flex gap-4 mb-8" },
+                      React.createElement('button', { onClick: onRestart, className: "px-8 py-3 bg-cyan-500 text-white font-bold rounded-lg hover:bg-cyan-400 transition" }, "Chơi lại từ đầu"),
+                      incorrectWords.length > 0 && (
+                          React.createElement('button', { onClick: onRetryIncorrect, className: "px-8 py-3 bg-amber-400 text-slate-800 font-bold rounded-lg hover:bg-amber-300 transition" }, `Làm lại ${incorrectWords.length} từ sai`)
+                      )
+                  ),
+                  incorrectWords.length > 0 && (
+                      React.createElement('div', { className: "w-full max-w-lg" },
+                          React.createElement('button', { onClick: () => setShowIncorrect(!showIncorrect), className: "text-cyan-600 hover:underline mb-4" },
+                              showIncorrect ? 'Ẩn' : 'Hiện', " các từ sai"
+                          ),
+                          showIncorrect && (
+                              React.createElement('div', { className: "bg-white/80 rounded-lg p-4 max-h-60 overflow-y-auto" },
+                                  React.createElement('ul', null,
+                                      incorrectWords.map((word, index) => (
+                                          React.createElement('li', { key: index, className: "flex justify-between p-2 border-b border-slate-200" },
+                                              React.createElement('span', { className: "font-semibold" }, word.english),
+                                              React.createElement('span', { className: "text-slate-500" }, word.vietnamese)
+                                          )
+                                      ))
+                                  )
+                              )
+                          )
+                      )
+                  )
+              )
+          );
+      };
+
+      // --- Main App Component ---
+      function App() {
+          const [gameState, setGameState] = useState('start');
+          const [words, setWords] = useState([]);
+          const [playerName, setPlayerName] = useState('Player');
+          const [score, setScore] = useState(0);
+          const [currentWordIndex, setCurrentWordIndex] = useState(0);
+          const [incorrectWords, setIncorrectWords] = useState([]);
+      
+          const originalWords = React.useRef(STATIC_WORD_LIST);
+      
+          useEffect(() => {
+              setWords(shuffleArray(originalWords.current));
+          }, []);
+      
+          const handleStartGame = (name) => {
+              setPlayerName(name);
+              setScore(0);
+              setCurrentWordIndex(0);
+              setIncorrectWords([]);
+              setWords(shuffleArray(originalWords.current));
+              setGameState('playing');
+          };
+      
+          const handleCorrect = (points) => {
+              setScore(prev => prev + points);
+          };
+      
+          const handleIncorrect = useCallback((word) => {
+              setIncorrectWords(prev => {
+                  if (prev.some(w => w.english === word.english)) {
+                      return prev;
+                  }
+                  return [...prev, word];
+              });
+          }, []);
+      
+          const handleNextWord = () => {
+              if (currentWordIndex < words.length - 1) {
+                  setCurrentWordIndex(prev => prev + 1);
+              } else {
+                  setGameState('finished');
+              }
+          };
+          
+          const handleRetryIncorrect = () => {
+              setWords(shuffleArray(incorrectWords));
+              setScore(0);
+              setCurrentWordIndex(0);
+              setIncorrectWords([]);
+              setGameState('playing');
+          };
+      
+          const renderContent = () => {
+              switch (gameState) {
+                  case 'start':
+                      return React.createElement(StartScreen, { onStart: handleStartGame });
+                  case 'playing':
+                      if (words.length > 0) {
+                          return React.createElement(GameScreen, {
+                              playerName: playerName,
+                              score: score,
+                              currentWord: words[currentWordIndex],
+                              wordIndex: currentWordIndex,
+                              totalWords: words.length,
+                              onCorrect: handleCorrect,
+                              onIncorrect: handleIncorrect,
+                              onNextWord: handleNextWord
+                          });
+                      }
+                      return null;
+                  case 'finished':
+                      return React.createElement(EndScreen, { score: score, incorrectWords: incorrectWords, onRestart: () => setGameState('start'), onRetryIncorrect: handleRetryIncorrect });
+                  default:
+                      return null;
+              }
+          };
+      
+          return (
+              React.createElement('main', { className: "font-sans min-h-screen w-full bg-sky-100 text-slate-800 flex flex-col items-center p-2 sm:p-4" },
+                  React.createElement('div', { className: "w-full h-full flex-grow flex flex-col max-w-4xl" },
+                      renderContent()
+                  )
+              )
+          );
+      }
+
+      // --- Mount Application ---
+      const rootElement = document.getElementById('root');
+      if (!rootElement) {
+        throw new Error("Could not find root element to mount to");
+      }
+      
+      const root = ReactDOM.createRoot(rootElement);
+      root.render(
+        React.createElement(React.StrictMode, null, 
+          React.createElement(App)
+        )
+      );
+
+    </script>
+  </body>
+</html>
